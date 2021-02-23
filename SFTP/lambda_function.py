@@ -2,6 +2,7 @@ import boto3
 import os
 import sys
 import gzip
+import csv
 import paramiko
 
 host = os.environ['HOSTNAME']
@@ -46,12 +47,17 @@ def lambda_handler(event, context):
         print("ATTEMPTING TO OUTPUT TO " + outputPath)
         try:
             with open(outputPath, 'wb') as f_out, gzip.open(download_path, 'rb') as f_in:
-                f_out.writelines(f_in)
-                print("FILE CREATED")
+                #f_out.writelines(f_in)
+		writer = csv.writer(f_out)
+                for row in csv.reader(f_in):
+                    if any(row):
+                        writer.writerow(row)
+                
+		print("FILE CREATED")
 
-                pathForUpload = remove_prefix(outputPath, "/tmp/")
-                SFTPTransfer(outputPath, pathForUpload)
-                print("SFTP COMPLETED")
+            pathForUpload = remove_prefix(outputPath, "/tmp/")
+            SFTPTransfer(outputPath, pathForUpload)
+            print("SFTP COMPLETED")
         except Exception as e:
             print("FAILED TO TRANSFER FILE")
             print(e)
